@@ -8,7 +8,7 @@ def ingest_data(data_path: str) -> Tuple[Annotated[pd.DataFrame, "X dataframe (w
                                          Annotated[pd.DataFrame, "y dataframe (labels)"]]:
     
     try:
-        df = pd.read_csv("/home/amogh/College/Disaster Tweet Web App/data/train_tweets.csv")
+        df = pd.read_csv(data_path)
         X = df.drop('target', axis=1)
         y = df['target']
         logging.info("Data divided into X and y")
