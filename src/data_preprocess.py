@@ -13,6 +13,9 @@ from torchtext.vocab import build_vocab_from_iterator
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
 
+#for testing
+from train_model import LSTMModel, model_training
+
 
 def split_data(X: pd.DataFrame, y: pd.DataFrame) -> Tuple[
     Annotated[pd.DataFrame, "xtrain"],
@@ -95,11 +98,11 @@ class Preprocess():
         tokenizer = get_tokenizer('basic_english')
         global text_vocab, keyword_vocab
         text_vocab = build_vocab_from_iterator(self.yield_tokens(text), specials=["<unk>", "<pad>"])
-        keyword_vocab = build_vocab_from_iterator(self.yield_tokens(keyword), specials=["<unk>", "<pad>"])
+        # keyword_vocab = build_vocab_from_iterator(self.yield_tokens(keyword), specials=["<unk>", "<pad>"])
         text_vocab.set_default_index(text_vocab["<unk>"])
-        keyword_vocab.set_default_index(keyword_vocab["<unk>"])
+        # keyword_vocab.set_default_index(keyword_vocab["<unk>"])
         text_pipeline = lambda x: text_vocab(tokenizer(x))
-        keyword_pipeline = lambda x: keyword_vocab(tokenizer(x))
+        keyword_pipeline = lambda x: text_vocab(tokenizer(x))
         
         df_comb = pd.concat([X, y], axis=1)
         
@@ -127,10 +130,23 @@ class TweetDataset(Dataset):
     
 def collate_batch(batch):
     text_batch, keyword_batch, target_batch = zip(*batch)
-    text_batch = pad_sequence(text_batch, padding_value=text_vocab["<pad>"])
-    keyword_batch = pad_sequence(keyword_batch, padding_value=keyword_vocab["<pad>"])
+    
+    # Find the maximum length in the batch
+    max_len_text = max(len(text) for text in text_batch)
+    max_len_keyword = max(len(keyword) for keyword in keyword_batch)
+    max_len = max(max_len_text, max_len_keyword)
+    
+    # Pad sequences to the maximum length
+    text_batch = [torch.cat([text, torch.tensor([text_vocab["<pad>"]] * (max_len - len(text)))]) for text in text_batch]
+    keyword_batch = [torch.cat([keyword, torch.tensor([text_vocab["<pad>"]] * (max_len - len(keyword)))]) for keyword in keyword_batch]
+    
+    # Convert lists to tensors
+    text_batch = torch.stack(text_batch)
+    keyword_batch = torch.stack(keyword_batch)
     target_batch = torch.stack(target_batch)
+    
     return text_batch, keyword_batch, target_batch
+
         
         
         
@@ -144,8 +160,9 @@ new1 = pre.preprocess_nan(new)
 text_pipe, keyword_pipe, comb_df = pre.convert(new1, ytrain)
 
 tw = TweetDataset(comb_df, text_pipeline=text_pipe, keyword_pipeline=keyword_pipe)
-dataloader = DataLoader(tw, batch_size=16, collate_fn=collate_batch)
-print(len(text_vocab), len(keyword_vocab))
+dataloader = DataLoader(tw, collate_fn=collate_batch)
+# print(next(iter(dataloader)))
+model = model_training(dataloader=dataloader)
 """
 this pipeline is now working, start working on steps.
 """
