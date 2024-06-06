@@ -161,8 +161,13 @@ text_pipe, keyword_pipe, comb_df = pre.convert(new1, ytrain)
 
 tw = TweetDataset(comb_df, text_pipeline=text_pipe, keyword_pipeline=keyword_pipe)
 dataloader = DataLoader(tw, collate_fn=collate_batch)
-# print(next(iter(dataloader)))
+
+"""
+add model saving function
+"""
+
 model = model_training(dataloader=dataloader)
+torch.save(model.state_dict(), "/home/amogh/College/Disaster Tweet Web App/models/model1.pth")
 """
 this pipeline is now working, start working on steps.
 """

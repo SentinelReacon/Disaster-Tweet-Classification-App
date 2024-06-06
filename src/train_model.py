@@ -45,7 +45,7 @@ def model_training(dataloader):
     embedding_dim = 128
     hidden_dim = 256
     output_dim = 1
-    num_epochs = 10
+    num_epochs = 2
     learning_rate = 0.001
 
     # Initialize the model, loss function, and optimizer
